@@ -13,8 +13,7 @@ function App() {
     async function fetchData() {
       const { data: endpoints, error } = await supabase
         .from('api_endpoints')
-        .select('id, url, monitoring_results(status, response_time)')
-        .limit(1, { referencedTable: 'monitoring_results' });
+        .select('id, url, monitoring_results(status, response_time).limit(1)');
       if (!error) setEndpoints(endpoints);
     }
     fetchData();
@@ -45,4 +44,4 @@ function App() {
   );
 }
 
-export default App; // Add this line
+export default App;
