@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -7,38 +7,54 @@ const supabase = createClient(
 );
 
 function App() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [user, setUser] = useState(null);
+  const [url, setUrl] = useState('');
+  const [notifyTo, setNotifyTo] = useState('');
+  const [notifyType, setNotifyType] = useState('sms');
 
-  const handleSignUp = async () => {
-    const { error } = await supabase.auth.signUp({ email, password });
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+  }, []);
+
+  const handleAddEndpoint = async () => {
+    const { error } = await supabase.from('api_endpoints').insert({
+      url,
+      notify_to: notifyTo,
+      notify_type: notifyType,
+      user_id: user.id,
+    });
     if (error) alert(error.message);
-    else alert('Check your email for confirmation!');
+    else {
+      alert('Endpoint added!');
+      setUrl('');
+      setNotifyTo('');
+    }
   };
 
-  const handleLogin = async () => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) alert(error.message);
-    else alert('Logged in!');
-  };
+  if (!user) return <div>Please log in (add login form here)</div>;
 
   return (
     <div style={{ padding: '20px' }}>
       <h1>API Monitor</h1>
       <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        type="text"
+        placeholder="API URL (e.g., https://api.stripe.com)"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
       />
       <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        type="text"
+        placeholder="Notify to (e.g., +1234567890)"
+        value={notifyTo}
+        onChange={(e) => setNotifyTo(e.target.value)}
       />
-      <button onClick={handleSignUp}>Sign Up</button>
-      <button onClick={handleLogin}>Log In</button>
+      <select value={notifyType} onChange={(e) => setNotifyType(e.target.value)}>
+        <option value="sms">SMS</option>
+        <option value="email">Email</option>
+      </select>
+      <button onClick={handleAddEndpoint}>Add Endpoint</button>
     </div>
   );
 }
