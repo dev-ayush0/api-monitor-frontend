@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -7,39 +7,38 @@ const supabase = createClient(
 );
 
 function App() {
-  const [endpoints, setEndpoints] = useState([]);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  useEffect(() => {
-    async function fetchData() {
-      const { data: endpoints, error } = await supabase
-        .from('api_endpoints')
-        .select('id, url, monitoring_results(status, response_time).limit(1)');
-      if (!error) setEndpoints(endpoints);
-    }
-    fetchData();
-  }, []);
+  const handleSignUp = async () => {
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) alert(error.message);
+    else alert('Check your email for confirmation!');
+  };
+
+  const handleLogin = async () => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) alert(error.message);
+    else alert('Logged in!');
+  };
 
   return (
     <div style={{ padding: '20px' }}>
       <h1>API Monitor</h1>
-      {endpoints.map((ep) => {
-        const latest = ep.monitoring_results[0] || {};
-        const statusText =
-          latest.status === 'good'
-            ? `${ep.url} is working fine`
-            : latest.status === 'slow'
-            ? `${ep.url} is slow`
-            : `${ep.url} is down`;
-        const color =
-          latest.status === 'good' ? 'green' : latest.status === 'slow' ? 'yellow' : 'red';
-
-        return (
-          <div key={ep.id}>
-            <span style={{ color, marginRight: '10px' }}>●</span>
-            {statusText}
-          </div>
-        );
-      })}
+      <input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <button onClick={handleSignUp}>Sign Up</button>
+      <button onClick={handleLogin}>Log In</button>
     </div>
   );
 }
